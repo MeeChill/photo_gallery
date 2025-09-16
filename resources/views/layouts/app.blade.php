@@ -338,6 +338,198 @@
             }, 300); // Wait for transition to complete
         }, 3000);
     }
+
+    // Comment functions
+function toggleCommentForm() {
+    const form = document.getElementById('commentForm');
+    form.classList.toggle('hidden');
+    if (!form.classList.contains('hidden')) {
+        document.getElementById('commentInput').focus();
+    }
+}
+
+function submitComment(event, photoId) {
+    event.preventDefault();
+
+    const form = event.target;
+    const formData = new FormData(form);
+    const submitButton = form.querySelector('button[type="submit"]');
+    const originalButtonText = submitButton.innerHTML;
+
+    // Disable button and show loading state
+    submitButton.disabled = true;
+    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Mengirim...';
+
+    fetch(`/photos/${photoId}/comments`, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json',
+        },
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            // If response is not OK, try to get the error message
+            return response.text().then(text => {
+                throw new Error(`HTTP error! status: ${response.status}, text: ${text}`);
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Add comment to the list
+            const commentsList = document.getElementById('commentsList');
+            const emptyMessage = commentsList.querySelector('.text-center');
+            if (emptyMessage) {
+                emptyMessage.remove();
+            }
+
+            const commentHtml = `
+                <div class="flex space-x-3 p-4 bg-dark-bg rounded-lg" id="comment-${data.comment.id}">
+                    <img src="${data.comment.user.avatar ? '/storage/' + data.comment.user.avatar : '/images/default-avatar.png'}"
+                         alt="${data.comment.user.name}"
+                         class="w-10 h-10 rounded-full">
+                    <div class="flex-1">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h4 class="font-semibold text-white">${data.comment.user.name}</h4>
+                                <p class="text-sm text-gray-400">Baru saja</p>
+                            </div>
+                            <div class="relative">
+                                <button onclick="toggleCommentMenu(${data.comment.id})" class="text-gray-400 hover:text-white">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <div id="commentMenu-${data.comment.id}" class="hidden absolute right-0 mt-2 w-48 bg-dark-card rounded-lg shadow-lg border border-dark-border z-10">
+                                    <button onclick="deleteComment(${photoId}, ${data.comment.id})" class="w-full text-left px-4 py-2 hover:bg-dark-bg transition">
+                                        <i class="fas fa-trash mr-2 text-red-500"></i>Hapus
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="mt-2 text-gray-300">${data.comment.comment}</p>
+                    </div>
+                </div>
+            `;
+
+            commentsList.insertAdjacentHTML('afterbegin', commentHtml);
+
+            // Update comments count
+            const commentsCount = document.querySelector('.text-xl.font-bold.text-white');
+            if (commentsCount) {
+                commentsCount.textContent = `Komentar (${data.comments_count})`;
+            }
+
+            // Reset form
+            form.reset();
+            toggleCommentForm();
+
+            // Show success message
+            showNotification('Komentar berhasil ditambahkan!', 'success');
+        } else {
+            // Show error message
+            showNotification(data.message || 'Gagal menambahkan komentar', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Terjadi kesalahan: ' + error.message, 'error');
+    })
+    .finally(() => {
+        // Re-enable button and restore original text
+        submitButton.disabled = false;
+        submitButton.innerHTML = originalButtonText;
+    });
+}
+
+function deleteComment(photoId, commentId) {
+    if (!confirm('Apakah Anda yakin ingin menghapus komentar ini?')) {
+        return;
+    }
+
+    fetch(`/photos/${photoId}/comments/${commentId}`, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json',
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.text().then(text => {
+                throw new Error(`HTTP error! status: ${response.status}, text: ${text}`);
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Remove comment from DOM
+            const commentElement = document.getElementById(`comment-${commentId}`);
+            if (commentElement) {
+                commentElement.remove();
+            }
+
+            // Update comments count
+            const commentsCount = document.querySelector('.text-xl.font-bold.text-white');
+            if (commentsCount) {
+                commentsCount.textContent = `Komentar (${data.comments_count})`;
+            }
+
+            // Check if no comments left
+            const commentsList = document.getElementById('commentsList');
+            if (data.comments_count === 0 && commentsList.children.length === 0) {
+                commentsList.innerHTML = `
+                    <div class="text-center py-8 text-gray-400">
+                        <i class="fas fa-comments text-4xl mb-2"></i>
+                        <p>Belum ada komentar. Jadilah yang pertama berkomentar!</p>
+                    </div>
+                `;
+            }
+
+            showNotification('Komentar berhasil dihapus!', 'success');
+        } else {
+            showNotification(data.message || 'Gagal menghapus komentar', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Terjadi kesalahan: ' + error.message, 'error');
+    });
+}
+
+function toggleCommentMenu(commentId) {
+    const menu = document.getElementById(`commentMenu-${commentId}`);
+    menu.classList.toggle('hidden');
+}
+
+// Close comment menus when clicking outside
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('.relative')) {
+        document.querySelectorAll('[id^="commentMenu-"]').forEach(menu => {
+            menu.classList.add('hidden');
+        });
+    }
+});
+
+// Notification function
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${
+        type === 'success' ? 'bg-green-600' :
+        type === 'error' ? 'bg-red-600' : 'bg-blue-600'
+    } text-white`;
+    notification.textContent = message;
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
     </script>
 
     @stack('scripts')

@@ -36,6 +36,21 @@ class Photo extends Model
         return $this->belongsToMany(User::class, 'saves');
     }
 
+    public function comments()
+    {
+        return $this->hasMany(Comment::class)->latest();
+    }
+
+    public function commentsCount()
+{
+    return $this->comments()->count();
+}
+
+public function getCommentsCountAttribute()
+{
+    return $this->comments()->count();
+}
+
     // Check if current user liked this photo
     public function isLiked()
     {

@@ -79,6 +79,87 @@
                 </div>
             </div>
         @endif
+
+        <!-- Comments Section -->
+        <div class="mt-8">
+            <div class="bg-dark-card rounded-lg shadow-lg border border-dark-border p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold text-white">
+                        Komentar ({{ $photo->comments->count() }})
+                    </h3>
+                    @if (auth()->check())
+                        <button onclick="toggleCommentForm()" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition duration-200">
+                            <i class="fas fa-comment mr-2"></i>Tambah Komentar
+                        </button>
+                    @endif
+                </div>
+
+                <!-- Comment Form -->
+                @if (auth()->check())
+                    <div id="commentForm" class="hidden mb-6 p-4 bg-dark-bg rounded-lg">
+                        <form id="commentFormElement" onsubmit="submitComment(event, {{ $photo->id }})">
+                            @csrf
+                            <div class="mb-4">
+                                <textarea name="comment"
+                                        id="commentInput"
+                                        rows="3"
+                                        class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                        placeholder="Tulis komentar Anda..."
+                                        required></textarea>
+                            </div>
+                            <div class="flex justify-end">
+                                <button type="button" onclick="toggleCommentForm()" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition duration-200 mr-2">
+                                    Batal
+                                </button>
+                                <button type="submit" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition duration-200">
+                                    <i class="fas fa-paper-plane mr-2"></i>Kirim Komentar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                @endif
+
+                <!-- Comments List -->
+                <div id="commentsList" class="space-y-4">
+                    @foreach ($photo->comments as $comment)
+                        <div class="flex space-x-3 p-4 bg-dark-bg rounded-lg" id="comment-{{ $comment->id }}">
+                            <img src="{{ $comment->user->avatar ?: asset('images/default-avatar.png') }}"
+                                alt="{{ $comment->user->name }}"
+                                class="w-10 h-10 rounded-full">
+                            <div class="flex-1">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h4 class="font-semibold text-white">{{ $comment->user->name }}</h4>
+                                        <p class="text-sm text-gray-400">{{ $comment->created_at->diffForHumans() }}</p>
+                                    </div>
+                                    @if (auth()->check() && (auth()->id() == $comment->user_id || auth()->id() == $photo->user_id))
+                                        <div class="relative">
+                                            <button onclick="toggleCommentMenu({{ $comment->id }})" class="text-gray-400 hover:text-white">
+                                                <i class="fas fa-ellipsis-v"></i>
+                                            </button>
+                                            <div id="commentMenu-{{ $comment->id }}" class="hidden absolute right-0 mt-2 w-48 bg-dark-card rounded-lg shadow-lg border border-dark-border z-10">
+                                                <button onclick="deleteComment({{ $photo->id }}, {{ $comment->id }})" class="w-full text-left px-4 py-2 hover:bg-dark-bg transition">
+                                                    <i class="fas fa-trash mr-2 text-red-500"></i>Hapus
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    @endif
+                                </div>
+                                <p class="mt-2 text-gray-300">{{ $comment->comment }}</p>
+                            </div>
+                        </div>
+                    @endforeach
+
+                    @if ($photo->comments()->count() == 0)
+                        <div class="text-center py-8 text-gray-400">
+                            <i class="fas fa-comments text-4xl mb-2"></i>
+                            <p>Belum ada komentar. Jadilah yang pertama berkomentar!</p>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Photo Info -->

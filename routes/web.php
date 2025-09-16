@@ -7,6 +7,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\BoardController;
 use App\Http\Controllers\SaveController;
+use App\Http\Controllers\CommentController;
 
 // Auth routes
 Auth::routes();
@@ -24,7 +25,8 @@ Route::put('/gallery/{photo}', [PhotoController::class, 'update'])->name('galler
 Route::delete('/gallery/{photo}', [PhotoController::class, 'destroy'])->name('gallery.destroy')->middleware('auth');
 Route::get('/gallery/{photo}', [PhotoController::class, 'show'])->name('gallery.show');
 Route::get('/photos/{photo}/download', [PhotoController::class, 'download'])->name('photos.download');
-
+Route::post('/photos/{photo}/comments', [CommentController::class, 'store'])->name('comments.store')->middleware('auth');
+Route::delete('/photos/{photo}/comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy')->middleware('auth');
 // Like and Save routes - Perbaikan URL
 Route::post('/gallery/{photo}/like', [PhotoController::class, 'like'])->name('gallery.like')->middleware('auth');
 Route::post('/gallery/{photo}/save', [PhotoController::class, 'save'])->name('gallery.save')->middleware('auth');
