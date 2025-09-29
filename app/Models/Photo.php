@@ -68,4 +68,11 @@ public function getCommentsCountAttribute()
         }
         return $this->saves()->where('user_id', auth()->id())->exists();
     }
+
+
+
+public function latestComments($limit = 5)
+{
+    return $this->comments()->latest()->take($limit)->get();
+}
 }

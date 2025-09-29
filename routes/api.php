@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\BoardController;
 use App\Http\Controllers\Api\LikeController;
 use App\Http\Controllers\Api\SaveController;
+use App\Http\Controllers\Api\CommentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -62,4 +63,14 @@ Route::middleware('auth:api')->group(function () {
     Route::post('photos/{photoId}/save', [SaveController::class, 'toggle']);
     Route::post('photos/{photoId}/save-to-board', [SaveController::class, 'saveToBoard']);
     Route::get('user/saves', [SaveController::class, 'userSaves']);
+
+    // Comment routes
+    Route::get('photos/{photoId}/comments', [CommentController::class, 'index']);
+    Route::post('photos/{photoId}/comments', [CommentController::class, 'store']);
+    Route::put('photos/{photoId}/comments/{commentId}', [CommentController::class, 'update']);
+    Route::delete('photos/{photoId}/comments/{commentId}', [CommentController::class, 'destroy']);
+    Route::get('user/comments', [CommentController::class, 'userComments']);
+    Route::get('comments/recent', [CommentController::class, 'recent']);
+    Route::get('comments/search', [CommentController::class, 'search']);
+    Route::get('comments/stats', [CommentController::class, 'stats']);
 });
