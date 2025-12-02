@@ -24,6 +24,9 @@ Route::get('/gallery/{photo}/edit', [PhotoController::class, 'edit'])->name('gal
 Route::put('/gallery/{photo}', [PhotoController::class, 'update'])->name('gallery.update')->middleware('auth');
 Route::delete('/gallery/{photo}', [PhotoController::class, 'destroy'])->name('gallery.destroy')->middleware('auth');
 Route::get('/gallery/{photo}', [PhotoController::class, 'show'])->name('gallery.show');
+//report route
+Route::post('/gallery/{photo}/report', [PhotoController::class, 'report'])->name('photos.report');
+
 Route::get('/photos/{photo}/download', [PhotoController::class, 'download'])->name('photos.download');
 Route::post('/photos/{photo}/comments', [CommentController::class, 'store'])->name('comments.store')->middleware('auth');
 Route::delete('/photos/{photo}/comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy')->middleware('auth');

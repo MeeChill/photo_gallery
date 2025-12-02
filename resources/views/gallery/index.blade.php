@@ -68,10 +68,16 @@
         $('#loading').show();
 
         let category = '{{ request('category') }}';
+        let search = '{{ request('search') }}';
         let url = '{{ route('gallery.index') }}?page=' + (page + 1);
 
         if (category && category !== 'all') {
             url += '&category=' + category;
+        }
+
+        if(search) {
+            url += '&search=' + encodeURIComponent(search); 
+
         }
 
         $.get(url, function(data) {

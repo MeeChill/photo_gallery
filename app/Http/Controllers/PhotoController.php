@@ -19,13 +19,27 @@ class PhotoController extends Controller
         $query->where('category', $request->category);
     }
 
+    //Fitur Search
+    if ($category = $request->input('category')) {
+        if ($category !== 'all') {
+            $query->where('category', $category);
+        }
+    }
+
+    if($search = $request->input('search')){
+       $query->where(function($q) use ($search) {
+           $q->where('title', 'like', "%{$search}%")
+             ->orWhere('description', 'like', "%{$search}%");
+       });
+    }
+
+    $photos = $query->latest()->paginate(20);
+
     if ($request->ajax()) {
-        $photos = $query->paginate(20);
         return view('gallery.partials.photos', compact('photos'))->render();
     }
 
-    $photos = $query->paginate(20);
-    $categories = Photo::distinct()->pluck('category');
+    $categories = Photo::select('category')->distinct()->pluck('category');
 
     return view('gallery.index', compact('photos', 'categories'));
 }
@@ -210,4 +224,24 @@ public function download(Photo $photo)
 
     return response()->download($filePath, $fileName);
 }
+
+// report
+public function report(Request $request, Photo $photo)
+{
+    $request->validate([
+        'reason' => 'required|string|max:255',
+        'message' => 'nullable|string|max:1000',
+    ]);
+
+    // Simpan laporan ke database
+    \App\Models\Report::create([
+        'user_id' => auth()->id(),
+        'photo_id' => $photo->id,
+        'reason' => $request->reason,
+        'message' => $request->message,
+    ]);
+
+    return response()->json(['success' => true]);
+}
+
 }

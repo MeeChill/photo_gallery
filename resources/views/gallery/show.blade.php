@@ -43,6 +43,16 @@
             <span>Share</span>
         </button>
 
+        {{-- Report --}}
+        @if (auth()->check() && auth()->id() != $photo->user_id)
+            <button onclick="openReportModal({{ $photo->id }})"
+                    class="flex items-center space-x-2 px-4 py-2 rounded-lg bg-red-900 hover:bg-red-700 text-red-200 transition"
+                    title="Laporkan Foto">
+                <i class="fas fa-flag"></i>
+                <span>Report</span>
+            </button>
+        @endif
+
         <!-- Edit and Delete buttons for photo owner -->
         @if (auth()->check() && auth()->id() == $photo->user_id)
             <a href="{{ route('gallery.edit', $photo->id) }}" class="flex items-center space-x-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 transition">
@@ -279,6 +289,51 @@
     </div>
 </div>
 
+<!-- Report Modal -->
+<div id="reportModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-dark-card rounded-lg p-6 max-w-md w-full mx-4">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold text-red-400">Laporkan Foto</h3>
+            <button onclick="closeReportModal()" class="text-dark-muted hover:text-white">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <form id="reportForm" onsubmit="submitReport(event)">
+            @csrf
+            <input type="hidden" id="reportPhotoId" name="photo_id">
+
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-2">Alasan</label>
+                <select name="reason" id="reportReason" required
+                        class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-2 focus:outline-none">
+                    <option value="">Pilih alasan</option>
+                    <option value="inappropriate">Konten tidak pantas</option>
+                    <option value="copyright">Melanggar hak cipta</option>
+                    <option value="spam">Spam / Iklan</option>
+                    <option value="other">Lainnya</option>
+                </select>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-2">Keterangan (opsional)</label>
+                <textarea name="message" id="reportMessage" rows="3"
+                        class="w-full bg-dark-bg border border-dark-border rounded-lg px-4 py-2 focus:outline-none"
+                        placeholder="Tambahkan detail tambahan (opsional)"></textarea>
+            </div>
+
+            <div class="flex justify-end space-x-2">
+                <button type="button" onclick="closeReportModal()" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition">
+                    Batal
+                </button>
+                <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+                    <i class="fas fa-flag mr-2"></i>Kirim Laporan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 
 </div>
 @endsection
@@ -323,5 +378,34 @@
     function closeDeleteModal() {
         document.getElementById('deleteModal').classList.add('hidden');
     }
+
+    function openReportModal(photoId) {
+    $('#reportPhotoId').val(photoId);
+    $('#reportModal').removeClass('hidden');
+}
+
+function closeReportModal() {
+    $('#reportModal').addClass('hidden');
+}
+
+function submitReport(e) {
+    e.preventDefault();
+    const photoId = $('#reportPhotoId').val();
+    const reason = $('#reportReason').val();
+    const message = $('#reportMessage').val();
+
+    $.post(`/gallery/${photoId}/report`, {
+        _token: '{{ csrf_token() }}',
+        reason: reason,
+        message: message
+    })
+    .done(() => {
+        alert('✅ Laporan Anda telah dikirim. Terima kasih!');
+        closeReportModal();
+    })
+    .fail(() => {
+        alert('❌ Gagal mengirim laporan. Coba lagi.');
+    });
+}
 </script>
 @endpush

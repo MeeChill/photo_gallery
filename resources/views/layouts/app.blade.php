@@ -122,11 +122,12 @@
 
                 <!-- Search Bar -->
                 <div class="hidden md:flex flex-1 max-w-md mx-8">
-                    <div class="relative w-full">
-                        <input type="text" placeholder="Search photos..."
+                    <form action="{{ route('gallery.index') }}" method="GET" class="relative w-full">
+                        <input type="text" name="search" value="{{ request('search') }}"
+                        placeholder="Search photos..."
                                class="w-full bg-dark-bg border border-dark-border rounded-full py-2 px-4 pl-10 focus:outline-none focus:ring-2 focus:ring-purple-500">
                         <i class="fas fa-search absolute left-3 top-3 text-dark-muted"></i>
-                    </div>
+                    </form>
                 </div>
 
                 <!-- Navigation Links -->
