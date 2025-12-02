@@ -46,5 +46,15 @@ Route::delete('/boards/{board}/photos/{photo}', [BoardController::class, 'remove
 // Save to board route
 Route::post('/photos/{photo}/save-to-board', [SaveController::class, 'saveToBoard'])->name('photos.saveToBoard')->middleware('auth');
 
-// Profile routes
+// Public profile (bisa dilihat siapa saja)
 Route::get('/profile/{user}', [ProfileController::class, 'show'])->name('profile.show');
+
+// Profile settings (hanya pemilik akun)
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::post('/profile/update', [ProfileController::class, 'updateProfile'])->name('profile.update');
+    Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar');
+    Route::post('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
+});
+
+
