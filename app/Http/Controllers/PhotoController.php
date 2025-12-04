@@ -4,31 +4,27 @@ namespace App\Http\Controllers;
 
 use App\Models\Photo;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use Intervention\Image\ImageManager;
-use Intervention\Image\Drivers\Gd\Driver;
 
 class PhotoController extends Controller
 {
     public function index(Request $request)
-{
-    $query = Photo::with(['user', 'likes', 'saves'])
-        ->latest();
+    {
+        $query = Photo::with(['user', 'likes', 'saves'])->latest();
 
-    if ($request->has('category') && $request->category != 'all') {
-        $query->where('category', $request->category);
-    }
+        if ($request->has('category') && $request->category !== 'all') {
+            $query->where('category', $request->category);
+        }
 
-    if ($request->ajax()) {
+        if ($request->ajax()) {
+            $photos = $query->paginate(20);
+            return view('gallery.partials.photos', compact('photos'))->render();
+        }
+
         $photos = $query->paginate(20);
-        return view('gallery.partials.photos', compact('photos'))->render();
+        $categories = Photo::distinct()->pluck('category');
+
+        return view('gallery.index', compact('photos', 'categories'));
     }
-
-    $photos = $query->paginate(20);
-    $categories = Photo::distinct()->pluck('category');
-
-    return view('gallery.index', compact('photos', 'categories'));
-}
 
     public function create()
     {
@@ -36,131 +32,120 @@ class PhotoController extends Controller
     }
 
     public function store(Request $request)
-{
-    $request->validate([
-        'title' => 'required|string|max:255',
-        'description' => 'nullable|string',
-        'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:5120',
-        'category' => 'required|string',
-    ]);
+    {
+        $request->validate([
+            'title'       => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'category'    => 'required|string',
+            'image'       => 'required|image|mimes:jpeg,png,jpg,gif|max:5120',
+        ]);
 
-    $image = $request->file('image');
-    $imageName = time() . '.' . $image->extension();
+        $image = $request->file('image');
+        $imageName = time() . '.' . $image->extension();
 
-    // Get image dimensions
-    $imageInfo = getimagesize($image->getPathname());
-    $width = $imageInfo[0];
-    $height = $imageInfo[1];
+        // dapatkan ukuran gambar
+        $imgInfo = getimagesize($image->getPathname());
+        $width = $imgInfo[0];
+        $height = $imgInfo[1];
 
-    // Simpan ke public/photos
-    $image->move(public_path('photos'), $imageName);
+        // simpan ke /public/photos
+        $image->move(public_path('photos'), $imageName);
 
-    Photo::create([
-        'user_id' => auth()->guard()->id(),
-        'title' => $request->title,
-        'description' => $request->description,
-        'image_path' => 'photos/' . $imageName, // Path relatif ke public
-        'category' => $request->category,
-        'width' => $width, // Gunakan nilai yang didapat dari getimagesize
-        'height' => $height, // Gunakan nilai yang didapat dari getimagesize
-    ]);
+        Photo::create([
+            'user_id'     => auth()->id(),  // FIX UTAMA
+            'title'       => $request->title,
+            'description' => $request->description,
+            'image_path'  => 'photos/' . $imageName,
+            'category'    => $request->category,
+            'width'       => $width,
+            'height'      => $height,
+        ]);
 
-    return redirect()->route('gallery.index')->with('success', 'Foto berhasil ditambahkan!');
-}
+        return redirect()->route('gallery.index')->with('success', 'Foto berhasil ditambahkan!');
+    }
 
     public function show(Photo $photo)
-{
-    // Load relasi untuk optimasi
-    $photo->load(['user', 'likes', 'saves']);
+    {
+        $photo->load(['user', 'likes', 'saves']);
 
-    $relatedPhotos = Photo::where('category', $photo->category)
-        ->where('id', '!=', $photo->id)
-        ->inRandomOrder()
-        ->take(6)
-        ->get();
+        $relatedPhotos = Photo::where('category', $photo->category)
+            ->where('id', '!=', $photo->id)
+            ->inRandomOrder()
+            ->take(6)
+            ->get();
 
-    return view('gallery.show', compact('photo', 'relatedPhotos'));
-}
+        return view('gallery.show', compact('photo', 'relatedPhotos'));
+    }
+
     public function edit(Photo $photo)
     {
-        // Pastikan hanya pemilik foto yang bisa edit
-        if (auth()->guard()->id() !== $photo->user_id) {
-            abort(403, 'Unauthorized action.');
+        if (auth()->id() !== $photo->user_id) {
+            abort(403);
         }
 
         return view('gallery.edit', compact('photo'));
     }
 
     public function update(Request $request, Photo $photo)
-{
-    // Pastikan hanya pemilik foto yang bisa update
-    if (auth()->guard()->id() !== $photo->user_id) {
-        abort(403, 'Unauthorized action.');
+    {
+        if (auth()->id() !== $photo->user_id) {
+            abort(403);
+        }
+
+        $request->validate([
+            'title'       => 'required|string|max:255',
+            'category'    => 'required|string',
+            'description' => 'nullable|string',
+            'image'       => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
+        ]);
+
+        $data = [
+            'title'       => $request->title,
+            'description' => $request->description,
+            'category'    => $request->category,
+        ];
+
+        if ($request->hasFile('image')) {
+
+            if (file_exists(public_path($photo->image_path))) {
+                unlink(public_path($photo->image_path));
+            }
+
+            $image = $request->file('image');
+            $imageName = time() . '.' . $image->extension();
+
+            // ukuran baru
+            $imgInfo = getimagesize($image->getPathname());
+            $data['width']  = $imgInfo[0];
+            $data['height'] = $imgInfo[1];
+
+            $image->move(public_path('photos'), $imageName);
+            $data['image_path'] = 'photos/' . $imageName;
+        }
+
+        $photo->update($data);
+
+        return redirect()->route('gallery.show', $photo->id)->with('success', 'Foto berhasil diperbarui!');
     }
 
-    $request->validate([
-        'title' => 'required|string|max:255',
-        'description' => 'nullable|string',
-        'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
-        'category' => 'required|string',
-    ]);
+    public function destroy(Photo $photo)
+    {
+        if (auth()->id() !== $photo->user_id) {
+            abort(403);
+        }
 
-    $data = [
-        'title' => $request->title,
-        'description' => $request->description,
-        'category' => $request->category,
-    ];
-
-    // Jika ada gambar baru yang diupload
-    if ($request->hasFile('image')) {
-        // Hapus gambar lama
         if (file_exists(public_path($photo->image_path))) {
             unlink(public_path($photo->image_path));
         }
 
-        // Upload gambar baru
-        $image = $request->file('image');
-        $imageName = time() . '.' . $image->extension();
+        $photo->delete();
 
-        // Get image dimensions
-        $imageInfo = getimagesize($image->getPathname());
-        $width = $imageInfo[0];
-        $height = $imageInfo[1];
-
-        // Simpan gambar baru
-        $image->move(public_path('photos'), $imageName);
-
-        $data['image_path'] = 'photos/' . $imageName;
-        $data['width'] = $width;
-        $data['height'] = $height;
+        return redirect()->route('gallery.index')->with('success', 'Foto berhasil dihapus!');
     }
-
-    $photo->update($data);
-
-    return redirect()->route('gallery.show', $photo->id)->with('success', 'Foto berhasil diperbarui!');
-}
-
-    public function destroy(Photo $photo)
-{
-    // Pastikan hanya pemilik foto yang bisa hapus
-    if (auth()->guard()->id() !== $photo->user_id) {
-        abort(403, 'Unauthorized action.');
-    }
-
-    // Hapus gambar dari public folder
-    if (file_exists(public_path($photo->image_path))) {
-        unlink(public_path($photo->image_path));
-    }
-
-    // Hapus record dari database
-    $photo->delete();
-
-    return redirect()->route('gallery.index')->with('success', 'Foto berhasil dihapus!');
-}
 
     public function like(Photo $photo)
     {
-        $user = auth()->user(); // Hapus guard()
+        $user = auth()->user();
 
         if ($photo->isLiked()) {
             $photo->likes()->detach($user->id);
@@ -178,7 +163,7 @@ class PhotoController extends Controller
 
     public function save(Photo $photo)
     {
-        $user = auth()->user(); // Hapus guard()
+        $user = auth()->user();
 
         if ($photo->isSaved()) {
             $photo->saves()->detach($user->id);
@@ -194,20 +179,16 @@ class PhotoController extends Controller
         ]);
     }
 
+    public function download(Photo $photo)
+    {
+        $photo->increment('downloads');
 
-public function download(Photo $photo)
-{
-    // Increment download count
-    $photo->increment('downloads');
+        $filePath = public_path($photo->image_path);
+        if (!file_exists($filePath)) {
+            abort(404);
+        }
 
-    $filePath = public_path($photo->image_path);
-
-    if (!file_exists($filePath)) {
-        abort(404, 'File not found');
+        $fileName = $photo->title . '.' . pathinfo($filePath, PATHINFO_EXTENSION);
+        return response()->download($filePath, $fileName);
     }
-
-    $fileName = $photo->title . '.' . pathinfo($filePath, PATHINFO_EXTENSION);
-
-    return response()->download($filePath, $fileName);
-}
 }
