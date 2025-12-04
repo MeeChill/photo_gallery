@@ -18,6 +18,8 @@ return new class extends Migration
             $table->string('category')->default('general');
             $table->integer('width')->nullable();
             $table->integer('height')->nullable();
+            $table->integer('downloads')->default(0);
+            $table->string('comments')->nullable();
             $table->timestamps();
         });
     }
