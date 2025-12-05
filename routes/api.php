@@ -9,6 +9,9 @@ use App\Http\Controllers\Api\BoardController;
 use App\Http\Controllers\Api\LikeController;
 use App\Http\Controllers\Api\SaveController;
 use App\Http\Controllers\Api\CommentController;
+use App\Http\Controllers\API\FollowController;
+use App\Http\Controllers\API\ReportController;
+use App\Http\Controllers\API\AdminReportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -73,4 +76,26 @@ Route::middleware('auth:api')->group(function () {
     Route::get('comments/recent', [CommentController::class, 'recent']);
     Route::get('comments/search', [CommentController::class, 'search']);
     Route::get('comments/stats', [CommentController::class, 'stats']);
+
+     Route::post('/follow/{user}', [FollowController::class, 'follow']);
+    Route::delete('/follow/{user}', [FollowController::class, 'unfollow']);
+    Route::get('/follow/{user}/check', [FollowController::class, 'checkFollow']);
+
+    // Get followers/following
+    Route::get('/users/{user}/followers', [FollowController::class, 'followers']);
+    Route::get('/users/{user}/following', [FollowController::class, 'following']);
+
+    // Follow suggestions
+    Route::get('/follow/suggestions', [FollowController::class, 'suggestions']);
+
+    // Report Routes
+    Route::post('/report', [ReportController::class, 'store']);
+    Route::get('/reports', [ReportController::class, 'index']);
+    Route::get('/reports/{report}', [ReportController::class, 'show']);
+});
+
+Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
+    Route::get('/reports', [AdminReportController::class, 'index']);
+    Route::put('/reports/{report}/status', [AdminReportController::class, 'updateStatus']);
+    Route::get('/reports/statistics', [AdminReportController::class, 'statistics']);
 });

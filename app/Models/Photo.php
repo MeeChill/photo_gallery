@@ -75,4 +75,9 @@ public function latestComments($limit = 5)
 {
     return $this->comments()->latest()->take($limit)->get();
 }
+
+public function reports()
+{
+    return $this->morphMany(Report::class, 'reportable');
+}
 }

@@ -36,6 +36,218 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
+
+        /* Chart Container Styles - Light theme on dark background */
+.chart-container {
+    background: #1e293b;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    border: 1px solid #334155;
+}
+
+.chart-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #e2e8f0;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.chart-subtitle {
+    font-size: 12px;
+    color: #94a3b8;
+    font-weight: 400;
+}
+
+/* Simple Bar Chart Styles */
+.simple-bar {
+    height: 200px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 10px 0;
+    background: #0f172a;
+    border-radius: 8px;
+    padding: 15px;
+}
+
+.bar-item {
+    flex: 1;
+    margin: 0 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    height: 100%;
+}
+
+.bar {
+    width: 100%;
+    background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+    border-radius: 4px 4px 0 0;
+    transition: all 0.3s ease;
+    position: relative;
+    min-height: 5px;
+}
+
+.bar:hover {
+    opacity: 0.8;
+    transform: translateY(-2px);
+}
+
+.bar-label {
+    font-size: 10px;
+    color: #94a3b8;
+    margin-top: 8px;
+    text-align: center;
+}
+
+.bar-value {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    font-weight: 600;
+    color: #e2e8f0;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    background: #1e293b;
+    padding: 2px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+.bar-item:hover .bar-value {
+    opacity: 1;
+}
+
+/* Donut Chart Styles */
+.donut-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 200px;
+    background: #0f172a;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.donut-chart {
+    position: relative;
+    width: 150px;
+    height: 150px;
+}
+
+.donut-legend {
+    flex: 1;
+    padding-left: 30px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    background: #1e293b;
+    padding: 8px 12px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.legend-item:hover {
+    background: #334155;
+    transform: translateX(4px);
+}
+
+.legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    margin-right: 10px;
+}
+
+.legend-text {
+    font-size: 13px;
+    color: #e2e8f0;
+    flex: 1;
+}
+
+.legend-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: #e2e8f0;
+}
+
+/* Update stat cards to match */
+.stat-card {
+    background: #1e293b;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    border: 1px solid #334155;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    border-color: #475569;
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    margin-bottom: 12px;
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #e2e8f0;
+    margin-bottom: 4px;
+}
+
+.stat-label {
+    font-size: 13px;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+.stat-change {
+    font-size: 12px;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+}
+
+.stat-change.positive {
+    color: #10b981;
+}
+
+.stat-change.negative {
+    color: #ef4444;
+}
+
+/* Table updates */
+.chart-container .space-y-3 > div {
+    background: #0f172a;
+    border: 1px solid #334155;
+}
+
+.chart-container .space-y-3 > div:hover {
+    background: #1e293b;
+    border-color: #475569;
+}
+
+
         /* Pinterest Masonry Layout */
         .masonry-grid {
             column-count: 5;
@@ -132,13 +344,18 @@
                 <!-- Navigation Links -->
                 <div class="flex items-center space-x-4">
                     @guest
-                        <a href="{{ route('login') }}" class="px-4 py-2 rounded-lg hover:bg-dark-bg transition">
-                            <i class="fas fa-sign-in-alt mr-2"></i>Login
+                    <a href="{{ route('login') }}" class="px-4 py-2 rounded-lg hover:bg-gray-100 transition text-gray-700">
+                        <i class="fas fa-sign-in-alt mr-2"></i>Login
+                    </a>
+                    <a href="{{ route('register') }}" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                        <i class="fas fa-user-plus mr-2"></i>Register
+                    </a>
+                @else
+                    @if (auth()->user()->is_admin)
+                        <a href="{{ route('admin.dashboard') }}" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+                            <i class="fas fa-cog mr-2"></i>Admin
                         </a>
-                        <a href="{{ route('register') }}" class="px-4 py-2 bg-purple-600 rounded-lg hover:bg-purple-700 transition">
-                            <i class="fas fa-user-plus mr-2"></i>Register
-                        </a>
-                    @else
+                    @endif
                         <a href="{{ route('gallery.create') }}" class="px-4 py-2 bg-purple-600 rounded-lg hover:bg-purple-700 transition">
                             <i class="fas fa-plus mr-2"></i>Upload
                         </a>

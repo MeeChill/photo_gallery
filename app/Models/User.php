@@ -26,6 +26,9 @@ class User extends Authenticatable
 
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+        'is_active' => 'boolean',
+        'is_admin' => 'boolean',
     ];
 
     public function photos()
@@ -53,5 +56,40 @@ class User extends Authenticatable
     public function boards()
 {
     return $this->hasMany(Board::class);
+}
+
+public function followers()
+{
+    return $this->hasMany(Follow::class, 'following_id');
+}
+
+public function following()
+{
+    return $this->hasMany(Follow::class, 'follower_id');
+}
+
+public function isFollowing(User $user)
+{
+    return $this->following()->where('following_id', $user->id)->exists();
+}
+
+public function followersCount()
+{
+    return $this->followers()->count();
+}
+
+public function followingCount()
+{
+    return $this->following()->count();
+}
+
+public function reports()
+{
+    return $this->hasMany(Report::class, 'reporter_id');
+}
+
+public function reportsReceived()
+{
+    return $this->morphMany(Report::class, 'reportable');
 }
 }

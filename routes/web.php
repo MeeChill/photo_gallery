@@ -8,6 +8,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\BoardController;
 use App\Http\Controllers\SaveController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\AdminController;
 
 // Auth routes
 Auth::routes();
@@ -55,6 +56,15 @@ Route::middleware('auth')->group(function () {
     Route::post('/profile/update', [ProfileController::class, 'updateProfile'])->name('profile.update');
     Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar');
     Route::post('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
+});
+
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
+    Route::get('/users', [AdminController::class, 'users'])->name('users');
+    Route::get('/photos', [AdminController::class, 'photos'])->name('photos');
+    Route::get('/boards', [AdminController::class, 'boards'])->name('boards');
+    Route::post('/user/{user}/toggle-status', [AdminController::class, 'toggleUserStatus'])->name('user.toggle-status');
+    Route::post('/photo/{photo}/toggle-featured', [AdminController::class, 'togglePhotoFeatured'])->name('photo.toggle-featured');
 });
 
 
